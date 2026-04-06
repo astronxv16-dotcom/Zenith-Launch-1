@@ -1,9 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Settings } from "lucide-react";
 import { useLauncherStore } from "@/hooks/useLauncherStore";
-import { WallpaperPicker } from "@/components/WallpaperPicker";
-import { SettingsModal } from "@/components/SettingsModal";
 import { useToast } from "@/hooks/use-toast";
 
 function getGreeting(): string {
@@ -23,27 +20,39 @@ function formatDate(date: Date): string {
   return date.toLocaleDateString([], { weekday: 'long', month: 'long', day: 'numeric' });
 }
 
-const ALIGN_CLASS: Record<string, string> = {
-  left: 'items-start text-left',
-  center: 'items-center text-center',
-  right: 'items-end text-right',
+const ALIGN_FLEX: Record<string, string> = {
+  left: 'items-start',
+  center: 'items-center',
+  right: 'items-end',
 };
 
-interface HomeScreenProps {
-  onModalChange?: (open: boolean) => void;
-}
+const ALIGN_TEXT: Record<string, string> = {
+  left: 'text-left',
+  center: 'text-center',
+  right: 'text-right',
+};
 
-export function HomeScreen({ onModalChange }: HomeScreenProps) {
+// Thin frosted glass styles
+const thinGlass: React.CSSProperties = {
+  background: 'rgba(255,255,255,0.04)',
+  backdropFilter: 'blur(18px) saturate(160%)',
+  WebkitBackdropFilter: 'blur(18px) saturate(160%)',
+  border: '1px solid rgba(255,255,255,0.07)',
+  borderRadius: '20px',
+};
+
+const clockGlass: React.CSSProperties = {
+  background: 'rgba(255,255,255,0.05)',
+  backdropFilter: 'blur(22px) saturate(180%)',
+  WebkitBackdropFilter: 'blur(22px) saturate(180%)',
+  border: '1px solid rgba(255,255,255,0.09)',
+  borderRadius: '28px',
+};
+
+export function HomeScreen() {
   const { state } = useLauncherStore();
   const { toast } = useToast();
   const [now, setNow] = useState(new Date());
-  const [showWallpaper, setShowWallpaper] = useState(false);
-  const [showSettings, setShowSettings] = useState(false);
-
-  const openModal = (open: boolean) => {
-    onModalChange?.(open);
-    if (!open) { setShowWallpaper(false); setShowSettings(false); }
-  };
 
   useEffect(() => {
     const timer = setInterval(() => setNow(new Date()), 1000);
@@ -54,105 +63,69 @@ export function HomeScreen({ onModalChange }: HomeScreenProps) {
   const align = state.favoritesAlign || 'left';
 
   const handleFavoriteClick = (app: typeof favorites[0]) => {
-    if (app.isBlocked) {
-      toast({ title: "App blocked", description: "Stay focused." });
-      return;
-    }
+    if (app.isBlocked) { toast({ title: "App blocked", description: "Stay focused." }); return; }
     toast({ title: `Opening ${app.name}...` });
   };
 
   return (
     <div className="relative w-full h-full flex flex-col overflow-hidden" data-testid="home-screen">
-      {/* Settings button — top right */}
-      <div className="absolute top-12 right-5 z-20">
-        <button
-          onClick={() => { setShowSettings(true); onModalChange?.(true); }}
-          className="p-2 rounded-full"
-          style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.1)' }}
-          data-testid="btn-home-settings"
-        >
-          <Settings className="w-4 h-4 text-white/50" />
-        </button>
-      </div>
 
-      {/* Date + Time — top center */}
+      {/* Clock + Date — aesthetic frosted glass card at top */}
       <motion.div
-        initial={{ opacity: 0, y: -8 }}
+        initial={{ opacity: 0, y: -12 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.7, ease: "easeOut" }}
-        className="relative z-10 flex flex-col items-center pt-14 px-6"
+        transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+        className="mx-5 mt-14 mb-0"
+        style={clockGlass}
       >
-        <p className="text-[11px] font-light tracking-widest uppercase text-white/35 mb-2">
-          {getGreeting()}
-        </p>
-        <h1
-          className="font-extralight leading-none tracking-tight text-white/85"
-          style={{ fontSize: 'clamp(4.5rem, 20vw, 7.5rem)' }}
-          data-testid="text-time"
-        >
-          {formatTime(now)}
-        </h1>
-        <p className="mt-2 text-sm font-light tracking-wide text-white/40" data-testid="text-date">
-          {formatDate(now)}
-        </p>
+        <div className="flex flex-col items-center py-7 px-6">
+          <p className="text-[10px] font-light tracking-[0.25em] uppercase text-white/30 mb-3">
+            {getGreeting()}
+          </p>
+          <h1
+            className="font-thin leading-none text-white/90 tabular-nums"
+            style={{ fontSize: 'clamp(5rem, 22vw, 8rem)', letterSpacing: '-0.02em' }}
+            data-testid="text-time"
+          >
+            {formatTime(now)}
+          </h1>
+          <p className="mt-3 text-sm font-light tracking-widest text-white/35" data-testid="text-date">
+            {formatDate(now)}
+          </p>
+        </div>
       </motion.div>
 
       <div className="flex-1" />
 
-      {/* Swipe hint */}
-      <div className="flex justify-center gap-2 mb-5 relative z-10">
-        <span className="w-6 h-[2px] rounded-full bg-white/12" />
-        <span className="w-2 h-[2px] rounded-full bg-white/30" />
-        <span className="w-6 h-[2px] rounded-full bg-white/12" />
+      {/* Swipe indicators */}
+      <div className="flex justify-center gap-1.5 mb-4">
+        <span className="w-5 h-[1.5px] rounded-full bg-white/15" />
+        <span className="w-2 h-[1.5px] rounded-full bg-white/35" />
+        <span className="w-5 h-[1.5px] rounded-full bg-white/15" />
       </div>
 
-      {/* Favorites — vertical list, near-transparent frosted glass */}
+      {/* Favorites — thin frosted glass */}
       {favorites.length > 0 && (
         <motion.div
-          initial={{ opacity: 0, y: 12 }}
+          initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.1 }}
-          className="relative z-10 mx-5 mb-10"
-          style={{
-            background: 'rgba(255,255,255,0.06)',
-            backdropFilter: 'blur(28px)',
-            WebkitBackdropFilter: 'blur(28px)',
-            border: '1px solid rgba(255,255,255,0.09)',
-            borderRadius: '24px',
-            padding: '10px 8px',
-          }}
+          transition={{ duration: 0.55, delay: 0.12, ease: [0.16, 1, 0.3, 1] }}
+          className="mx-5 mb-10"
+          style={thinGlass}
         >
-          <div className={`flex flex-col ${ALIGN_CLASS[align]} gap-0`}>
+          <div className={`flex flex-col ${ALIGN_FLEX[align]} py-2 px-2`}>
             {favorites.slice(0, 6).map((app) => (
               <button
                 key={app.id}
                 onClick={() => handleFavoriteClick(app)}
-                className="py-2.5 px-4 rounded-xl active:bg-white/8 transition-colors w-full"
+                className={`py-2.5 px-3 rounded-xl active:bg-white/6 transition-colors w-full ${ALIGN_TEXT[align]}`}
                 data-testid={`fav-${app.id}`}
               >
-                <span className="text-sm font-light text-white/70 tracking-wide">
-                  {app.name}
-                </span>
+                <span className="text-sm font-light text-white/65 tracking-wide">{app.name}</span>
               </button>
             ))}
           </div>
         </motion.div>
-      )}
-
-      {/* Modals — stop propagation so swipe doesn't trigger */}
-      {showWallpaper && (
-        <div onMouseDown={e => e.stopPropagation()} onTouchStart={e => e.stopPropagation()}>
-          <WallpaperPicker isOpen={showWallpaper} onClose={() => openModal(false)} />
-        </div>
-      )}
-      {showSettings && (
-        <div onMouseDown={e => e.stopPropagation()} onTouchStart={e => e.stopPropagation()}>
-          <SettingsModal
-            isOpen={showSettings}
-            onClose={() => openModal(false)}
-            onOpenWallpaper={() => { setShowSettings(false); setShowWallpaper(true); }}
-          />
-        </div>
       )}
     </div>
   );

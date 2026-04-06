@@ -1,8 +1,14 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useLauncherStore } from "@/hooks/useLauncherStore";
 
-function formatTime(d: Date) {
-  return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+function formatTime(d: Date, hour12: boolean): { main: string; period?: string } {
+  if (hour12) {
+    const str = d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true });
+    const match = str.match(/^(\d+:\d+)\s?(AM|PM)$/i);
+    if (match) return { main: match[1], period: match[2].toUpperCase() };
+    return { main: str };
+  }
+  return { main: d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false }) };
 }
 
 function formatDate(d: Date) {
@@ -59,6 +65,7 @@ interface HomeScreenProps {
 export function HomeScreen({ onLock }: HomeScreenProps) {
   const { state } = useLauncherStore();
   const [now, setNow] = useState(new Date());
+  const is12h = (state.clockFormat ?? '12h') === '12h';
   const lastTapRef = useRef<number>(0);
 
   // Update clock on minute boundary — battery friendly
@@ -77,6 +84,7 @@ export function HomeScreen({ onLock }: HomeScreenProps) {
     return () => clearTimeout(id);
   }, []);
 
+  const timeDisplay = formatTime(now, is12h);
   const favorites = state.apps.filter(a => a.isFavorite && !a.isHidden);
   const align = state.favoritesAlign || 'left';
 
@@ -102,23 +110,35 @@ export function HomeScreen({ onLock }: HomeScreenProps) {
       {/* Clock — pure, clean, no effects */}
       <div className="flex flex-col items-center pt-16 px-6">
         <div
-          className="cursor-pointer active:opacity-70 transition-opacity duration-100"
+          className="cursor-pointer active:opacity-70 transition-opacity duration-100 flex items-start gap-2"
           onClick={handleClockTap}
           onTouchEnd={handleClockTap}
         >
           <h1
-            className="leading-none tabular-nums text-center"
+            className="leading-none tabular-nums"
             style={{
-              fontSize: 'clamp(5rem, 22vw, 8rem)',
+              fontSize: 'clamp(4.2rem, 19vw, 7rem)',
               fontWeight: 100,
               letterSpacing: '0.02em',
-              color: 'rgba(210,218,228,0.88)',
-              textShadow: '0 2px 16px rgba(0,0,0,0.45)',
+              color: 'rgba(210,218,228,0.62)',
+              textShadow: '0 2px 20px rgba(0,0,0,0.35)',
             }}
             data-testid="text-time"
           >
-            {formatTime(now)}
+            {timeDisplay.main}
           </h1>
+          {timeDisplay.period && (
+            <span
+              className="font-extralight leading-none mt-2 select-none"
+              style={{
+                fontSize: 'clamp(0.75rem, 3vw, 1.1rem)',
+                letterSpacing: '0.06em',
+                color: 'rgba(210,218,228,0.38)',
+              }}
+            >
+              {timeDisplay.period}
+            </span>
+          )}
         </div>
 
         <p

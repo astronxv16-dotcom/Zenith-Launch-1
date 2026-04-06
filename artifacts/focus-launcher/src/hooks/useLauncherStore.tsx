@@ -31,6 +31,8 @@ export type FavoritesAlign = 'left' | 'center' | 'right';
 // calendarEvents: { "2026-04-06": "Doctor appt" }
 export type CalendarEvents = Record<string, string>;
 
+export type ClockFormat = '12h' | '24h';
+
 export type LauncherState = {
   apps: AppData[];
   folders: FolderData[];
@@ -40,6 +42,7 @@ export type LauncherState = {
   wallpaper: string;
   wallpaperImage: string | null;
   favoritesAlign: FavoritesAlign;
+  clockFormat: ClockFormat;
   lastHabitResetDate: string;
   calendarEvents: CalendarEvents;
 };
@@ -77,6 +80,7 @@ const DEFAULT_STATE: LauncherState = {
   wallpaper: 'none',
   wallpaperImage: null,
   favoritesAlign: 'left',
+  clockFormat: '12h',
   lastHabitResetDate: new Date().toISOString().split('T')[0],
   calendarEvents: {},
 };
@@ -89,6 +93,7 @@ type LauncherContextType = {
   setWallpaper: (theme: string) => void;
   setWallpaperImage: (dataUrl: string | null) => void;
   setFavoritesAlign: (align: FavoritesAlign) => void;
+  setClockFormat: (format: ClockFormat) => void;
   moveAppToFolder: (appId: string, folderId: string | null) => void;
   renameFolder: (folderId: string, name: string) => void;
   setCalendarEvent: (dateKey: string, text: string) => void;
@@ -151,11 +156,12 @@ export function LauncherProvider({ children }: { children: React.ReactNode }) {
   const setWallpaper = (wallpaper: string) => updateState({ wallpaper, wallpaperImage: null });
   const setWallpaperImage = (dataUrl: string | null) => updateState({ wallpaperImage: dataUrl, wallpaper: dataUrl ? 'custom' : 'none' });
   const setFavoritesAlign = (favoritesAlign: FavoritesAlign) => updateState({ favoritesAlign });
+  const setClockFormat = (clockFormat: ClockFormat) => updateState({ clockFormat });
 
   return (
     <LauncherContext.Provider value={{
       state, updateState, updateApp, toggleFavorite,
-      setWallpaper, setWallpaperImage, setFavoritesAlign,
+      setWallpaper, setWallpaperImage, setFavoritesAlign, setClockFormat,
       moveAppToFolder, renameFolder, setCalendarEvent, deleteCalendarEvent,
     }}>
       {children}

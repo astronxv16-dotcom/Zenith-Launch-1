@@ -1,6 +1,6 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { X, AlignLeft, AlignCenter, AlignRight, Eye } from "lucide-react";
-import { useLauncherStore, FavoritesAlign } from "@/hooks/useLauncherStore";
+import { useLauncherStore, FavoritesAlign, ClockFormat } from "@/hooks/useLauncherStore";
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -21,7 +21,7 @@ const sheetStyle: React.CSSProperties = {
 };
 
 export function SettingsModal({ isOpen, onClose, onOpenWallpaper }: SettingsModalProps) {
-  const { state, setFavoritesAlign, updateApp } = useLauncherStore();
+  const { state, setFavoritesAlign, setClockFormat, updateApp } = useLauncherStore();
 
   const alignOptions: { value: FavoritesAlign; icon: typeof AlignLeft; label: string }[] = [
     { value: 'left', icon: AlignLeft, label: 'Left' },
@@ -67,6 +67,26 @@ export function SettingsModal({ isOpen, onClose, onOpenWallpaper }: SettingsModa
                 >
                   Change wallpaper
                 </button>
+              </Section>
+
+              {/* Clock format */}
+              <Section label="Clock format">
+                <div className="flex gap-2">
+                  {(['12h', '24h'] as ClockFormat[]).map(fmt => (
+                    <button
+                      key={fmt}
+                      onClick={() => setClockFormat(fmt)}
+                      className="flex-1 py-3.5 rounded-xl text-sm font-light transition-all active:scale-95"
+                      style={
+                        (state.clockFormat ?? '12h') === fmt
+                          ? { background: 'rgba(255,255,255,0.10)', border: '1px solid rgba(255,255,255,0.15)', color: 'rgba(255,255,255,0.70)' }
+                          : { background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.28)' }
+                      }
+                    >
+                      {fmt === '12h' ? '12h  AM/PM' : '24h'}
+                    </button>
+                  ))}
+                </div>
               </Section>
 
               {/* Alignment */}

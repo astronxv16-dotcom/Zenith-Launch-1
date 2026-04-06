@@ -8,7 +8,11 @@ function formatDate(date: Date): string {
   return date.toLocaleDateString([], { weekday: 'long', month: 'long', day: 'numeric' });
 }
 
-export function FocusPanel() {
+interface FocusPanelProps {
+  onModalChange?: (open: boolean) => void;
+}
+
+export function FocusPanel({ onModalChange: _onModalChange }: FocusPanelProps) {
   const { state, updateState } = useLauncherStore();
   const [newTodo, setNewTodo] = useState("");
   const [editingHabitId, setEditingHabitId] = useState<string | null>(null);
@@ -52,10 +56,17 @@ export function FocusPanel() {
   const completedHabits = state.habits.filter(h => h.isCompleted).length;
   const totalHabits = state.habits.length;
 
+  const glassStyle: React.CSSProperties = {
+    background: 'rgba(255,255,255,0.06)',
+    backdropFilter: 'blur(24px)',
+    WebkitBackdropFilter: 'blur(24px)',
+    border: '1px solid rgba(255,255,255,0.08)',
+    borderRadius: '16px',
+  };
+
   return (
     <div
       className="w-full h-full flex flex-col overflow-y-auto"
-      style={{ background: 'linear-gradient(160deg, #0c0e14 0%, #111520 100%)' }}
       data-testid="focus-panel"
     >
       {/* Header */}
@@ -79,8 +90,6 @@ export function FocusPanel() {
           <p className="text-[11px] font-light tracking-widest uppercase text-white/30">Habits</p>
           <p className="text-[11px] text-white/20 font-light">{completedHabits}/{totalHabits}</p>
         </div>
-
-        {/* Progress bar */}
         <div className="h-[2px] bg-white/8 rounded-full mb-3 overflow-hidden">
           <motion.div
             className="h-full bg-white/30 rounded-full"
@@ -88,14 +97,9 @@ export function FocusPanel() {
             transition={{ duration: 0.4 }}
           />
         </div>
-
         <div className="space-y-2">
           {state.habits.map((habit) => (
-            <motion.div
-              key={habit.id}
-              layout
-              className="flex items-center gap-3 py-3 px-4 glass-panel rounded-2xl"
-            >
+            <motion.div key={habit.id} layout style={glassStyle} className="flex items-center gap-3 py-3 px-4">
               {editingHabitId === habit.id ? (
                 <input
                   type="text"
@@ -111,11 +115,7 @@ export function FocusPanel() {
                 <>
                   <button
                     onClick={() => toggleHabit(habit.id)}
-                    className={`w-5 h-5 rounded-full border flex items-center justify-center flex-none transition-all ${
-                      habit.isCompleted
-                        ? 'bg-white/20 border-white/30'
-                        : 'border-white/20'
-                    }`}
+                    className={`w-5 h-5 rounded-full border flex items-center justify-center flex-none transition-all ${habit.isCompleted ? 'bg-white/20 border-white/30' : 'border-white/20'}`}
                     data-testid={`btn-habit-${habit.id}`}
                   >
                     {habit.isCompleted && <Check className="w-3 h-3 text-white/80" />}
@@ -140,8 +140,6 @@ export function FocusPanel() {
       {/* Todos */}
       <div className="px-5 mb-5">
         <p className="text-[11px] font-light tracking-widest uppercase text-white/30 mb-3">To Do</p>
-
-        {/* Add input */}
         <div className="flex gap-2 mb-3">
           <input
             type="text"
@@ -149,26 +147,23 @@ export function FocusPanel() {
             value={newTodo}
             onChange={(e) => setNewTodo(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && addTodo()}
-            className="flex-1 glass-panel rounded-2xl px-4 py-3 text-sm font-light text-white/70 placeholder:text-white/20 outline-none focus:ring-1 focus:ring-white/15 transition-all bg-transparent"
+            style={glassStyle}
+            className="flex-1 px-4 py-3 text-sm font-light text-white/70 placeholder:text-white/20 outline-none bg-transparent"
             data-testid="input-new-todo"
           />
           <button
             onClick={addTodo}
-            className="w-12 h-12 rounded-2xl glass-panel flex items-center justify-center active:scale-95 transition-transform"
+            style={{ ...glassStyle, borderRadius: '16px', width: '48px', height: '48px', flexShrink: 0 }}
+            className="flex items-center justify-center active:scale-95 transition-transform"
             data-testid="btn-add-todo"
           >
             <Plus className="w-5 h-5 text-white/40" />
           </button>
         </div>
-
         <div className="space-y-2">
           <AnimatePresence>
             {state.todos.length === 0 && (
-              <motion.p
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="text-center py-4 text-xs text-white/20 font-light"
-              >
+              <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center py-4 text-xs text-white/20 font-light">
                 All clear.
               </motion.p>
             )}
@@ -179,13 +174,12 @@ export function FocusPanel() {
                 initial={{ opacity: 0, y: 6 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, x: 16 }}
-                className="flex items-center gap-3 py-3 px-4 glass-panel rounded-2xl"
+                style={glassStyle}
+                className="flex items-center gap-3 py-3 px-4"
               >
                 <button
                   onClick={() => toggleTodo(todo.id)}
-                  className={`w-5 h-5 rounded-full border flex items-center justify-center flex-none transition-all ${
-                    todo.isCompleted ? 'bg-white/20 border-white/30' : 'border-white/20'
-                  }`}
+                  className={`w-5 h-5 rounded-full border flex items-center justify-center flex-none transition-all ${todo.isCompleted ? 'bg-white/20 border-white/30' : 'border-white/20'}`}
                   data-testid={`btn-todo-${todo.id}`}
                 >
                   {todo.isCompleted && <Check className="w-3 h-3 text-white/80" />}
@@ -193,11 +187,7 @@ export function FocusPanel() {
                 <span className={`flex-1 text-sm font-light ${todo.isCompleted ? 'line-through text-white/25' : 'text-white/60'}`}>
                   {todo.text}
                 </span>
-                <button
-                  onClick={() => deleteTodo(todo.id)}
-                  className="text-white/15 hover:text-white/40 transition-colors"
-                  data-testid={`btn-delete-todo-${todo.id}`}
-                >
+                <button onClick={() => deleteTodo(todo.id)} className="text-white/15 hover:text-white/40 transition-colors" data-testid={`btn-delete-todo-${todo.id}`}>
                   <X className="w-4 h-4" />
                 </button>
               </motion.div>
@@ -214,7 +204,8 @@ export function FocusPanel() {
           onChange={(e) => updateState({ quickNotes: e.target.value })}
           placeholder="Jot something down..."
           rows={3}
-          className="w-full glass-panel rounded-2xl px-4 py-3 text-sm font-light text-white/60 placeholder:text-white/18 outline-none focus:ring-1 focus:ring-white/12 transition-all resize-none bg-transparent"
+          style={glassStyle}
+          className="w-full px-4 py-3 text-sm font-light text-white/60 placeholder:text-white/18 outline-none resize-none bg-transparent"
           data-testid="textarea-quick-notes"
         />
       </div>

@@ -25,6 +25,14 @@ export const WALLPAPER_GRADIENTS: Record<string, string> = {
   'graphite': 'linear-gradient(160deg, #151719 0%, #1e2127 100%)',
 };
 
+const sheetStyle: React.CSSProperties = {
+  background: 'rgba(14,16,22,0.85)',
+  backdropFilter: 'blur(40px)',
+  WebkitBackdropFilter: 'blur(40px)',
+  border: '1px solid rgba(255,255,255,0.08)',
+  borderRadius: '28px 28px 0 0',
+};
+
 export function WallpaperPicker({ isOpen, onClose }: WallpaperPickerProps) {
   const { state, setWallpaper, setWallpaperImage } = useLauncherStore();
   const { toast } = useToast();
@@ -42,7 +50,7 @@ export function WallpaperPicker({ isOpen, onClose }: WallpaperPickerProps) {
       const dataUrl = ev.target?.result as string;
       setWallpaperImage(dataUrl);
       onClose();
-      toast({ title: "Wallpaper set from gallery" });
+      toast({ title: "Wallpaper set" });
     };
     reader.readAsDataURL(file);
     e.target.value = '';
@@ -57,30 +65,39 @@ export function WallpaperPicker({ isOpen, onClose }: WallpaperPickerProps) {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm"
+            className="fixed inset-0 z-50 bg-black/40 backdrop-blur-[2px]"
           />
           <motion.div
             initial={{ y: "100%" }}
             animate={{ y: 0 }}
             exit={{ y: "100%" }}
-            transition={{ type: "spring", damping: 28, stiffness: 220 }}
-            className="fixed bottom-0 left-0 right-0 z-50 glass-panel rounded-t-3xl p-6 pb-12"
+            transition={{ type: "spring", damping: 30, stiffness: 240 }}
+            className="fixed bottom-0 left-0 right-0 z-50 p-6 pb-14"
+            style={sheetStyle}
+            onMouseDown={e => e.stopPropagation()}
+            onTouchStart={e => e.stopPropagation()}
           >
             <div className="flex justify-between items-center mb-5">
-              <h2 className="text-lg font-light opacity-80">Wallpaper</h2>
-              <button onClick={onClose} className="p-2 rounded-full glass-panel-light" data-testid="btn-close-wallpaper">
-                <X className="w-4 h-4 opacity-50" />
+              <h2 className="text-lg font-light text-white/70">Wallpaper</h2>
+              <button
+                onClick={onClose}
+                className="p-2 rounded-full"
+                style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.08)' }}
+                data-testid="btn-close-wallpaper"
+              >
+                <X className="w-4 h-4 text-white/45" />
               </button>
             </div>
 
-            {/* Gallery pick button */}
+            {/* Gallery pick */}
             <button
               onClick={() => fileRef.current?.click()}
-              className="w-full flex items-center gap-3 py-3 px-4 rounded-2xl glass-panel-light mb-5 active:scale-[0.98] transition-transform"
+              className="w-full flex items-center gap-3 py-3.5 px-4 rounded-2xl mb-5 active:bg-white/8 transition-colors"
+              style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.09)' }}
               data-testid="btn-pick-from-gallery"
             >
-              <ImagePlus className="w-5 h-5 opacity-50" />
-              <span className="text-sm font-light opacity-70">Choose from gallery</span>
+              <ImagePlus className="w-5 h-5 text-white/40" />
+              <span className="text-sm font-light text-white/55">Choose from gallery</span>
               {state.wallpaperImage && (
                 <div
                   className="ml-auto w-8 h-8 rounded-lg overflow-hidden flex-none"
@@ -97,10 +114,8 @@ export function WallpaperPicker({ isOpen, onClose }: WallpaperPickerProps) {
               data-testid="input-wallpaper-file"
             />
 
-            {/* Preset label */}
-            <p className="text-xs font-light tracking-widest uppercase opacity-30 mb-3">Dark Presets</p>
+            <p className="text-[11px] font-light tracking-widest uppercase text-white/25 mb-3">Dark Presets</p>
 
-            {/* Preset swatches */}
             <div className="flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory">
               {PRESETS.map((preset) => (
                 <button
@@ -111,11 +126,11 @@ export function WallpaperPicker({ isOpen, onClose }: WallpaperPickerProps) {
                   data-testid={`btn-wallpaper-${preset.id}`}
                 >
                   {state.wallpaper === preset.id && !state.wallpaperImage && (
-                    <div className="absolute inset-0 flex items-center justify-center bg-white/8 rounded-2xl">
-                      <Check className="w-5 h-5 text-white/60" />
+                    <div className="absolute inset-0 flex items-center justify-center rounded-2xl bg-white/8">
+                      <Check className="w-5 h-5 text-white/50" />
                     </div>
                   )}
-                  <span className="absolute bottom-2 left-0 right-0 text-[10px] text-center font-light text-white/40">
+                  <span className="absolute bottom-2 left-0 right-0 text-[10px] text-center font-light text-white/35">
                     {preset.name}
                   </span>
                 </button>

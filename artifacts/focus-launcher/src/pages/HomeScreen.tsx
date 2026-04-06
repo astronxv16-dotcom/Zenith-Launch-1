@@ -25,9 +25,10 @@ const ALIGN_TEXT: Record<string, string> = { left: 'text-left', center: 'text-ce
 
 interface HomeScreenProps {
   onLock?: () => void;
+  onOpenPlanner?: () => void;
 }
 
-export function HomeScreen({ onLock }: HomeScreenProps) {
+export function HomeScreen({ onLock, onOpenPlanner }: HomeScreenProps) {
   const { state } = useLauncherStore();
   const { toast } = useToast();
   const [now, setNow] = useState(new Date());
@@ -42,43 +43,28 @@ export function HomeScreen({ onLock }: HomeScreenProps) {
   const align = state.favoritesAlign || 'left';
 
   const openClock = useCallback(() => {
-    const intents = [
-      'intent://com.android.deskclock#Intent;scheme=android-app;end',
-      'android-app://com.android.deskclock/',
-      'clock://',
-    ];
-    let opened = false;
-    for (const intent of intents) {
-      try {
-        window.location.href = intent;
-        opened = true;
-        break;
-      } catch { /* try next */ }
-    }
-    if (!opened) toast({ title: "Opening Clock..." });
+    window.location.href = 'intent://com.android.deskclock#Intent;scheme=android-app;end';
+    setTimeout(() => toast({ title: "Opening Clock..." }), 300);
   }, [toast]);
 
   const handleClockTap = useCallback((e: React.MouseEvent | React.TouchEvent) => {
     e.stopPropagation();
-    const now = Date.now();
-    const delta = now - lastTapRef.current;
-    if (delta < 350 && delta > 0) {
+    const ts = Date.now();
+    const delta = ts - lastTapRef.current;
+    if (delta < 340 && delta > 0) {
       onLock?.();
     } else {
-      lastTapRef.current = now;
-      const timer = setTimeout(() => {
-        if (Date.now() - lastTapRef.current >= 340) {
-          openClock();
-        }
-      }, 360);
-      return () => clearTimeout(timer);
+      lastTapRef.current = ts;
+      setTimeout(() => {
+        if (Date.now() - lastTapRef.current >= 330) openClock();
+      }, 350);
     }
   }, [openClock, onLock]);
 
   return (
     <div className="relative w-full h-full flex flex-col overflow-hidden" data-testid="home-screen">
 
-      {/* 3D Clock */}
+      {/* 3D Clock — frosted glass card */}
       <motion.div
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
@@ -87,79 +73,91 @@ export function HomeScreen({ onLock }: HomeScreenProps) {
         style={{ perspective: '600px' }}
       >
         <p
-          className="text-[10px] font-light tracking-[0.28em] uppercase mb-3 select-none"
-          style={{ color: 'rgba(255,255,255,0.45)', textShadow: '0 1px 8px rgba(0,0,0,0.6)' }}
+          className="text-[10px] font-light tracking-[0.28em] uppercase mb-4 select-none"
+          style={{ color: 'rgba(255,255,255,0.40)', textShadow: '0 1px 8px rgba(0,0,0,0.6)' }}
         >
           {getGreeting()}
         </p>
 
-        {/* 3D Time display */}
+        {/* Frosted glass card behind clock */}
         <div
-          className="relative cursor-pointer select-none active:scale-95 transition-transform"
+          className="relative cursor-pointer select-none active:scale-[0.97] transition-transform duration-150 px-6 py-4 rounded-3xl"
+          style={{
+            background: 'rgba(255,255,255,0.04)',
+            backdropFilter: 'blur(24px) saturate(140%)',
+            WebkitBackdropFilter: 'blur(24px) saturate(140%)',
+            border: '1px solid rgba(255,255,255,0.07)',
+            boxShadow: '0 8px 40px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.07)',
+          }}
           onClick={handleClockTap}
           onTouchEnd={handleClockTap}
-          title="Tap to open Clock · Double-tap to lock"
         >
           {/* Shadow layer (depth) */}
           <h1
             aria-hidden
-            className="font-thin leading-none tabular-nums absolute inset-0 pointer-events-none"
+            className="font-thin leading-none tabular-nums absolute inset-x-6 top-4 pointer-events-none"
             style={{
-              fontSize: 'clamp(5rem, 22vw, 8rem)',
+              fontSize: 'clamp(4.5rem, 20vw, 7.5rem)',
               letterSpacing: '-0.02em',
               color: 'transparent',
-              transform: 'translateY(4px) translateZ(-8px) rotateX(4deg)',
-              textShadow:
-                '0 6px 24px rgba(0,0,0,0.9), 0 12px 40px rgba(0,0,0,0.7)',
+              transform: 'translateY(5px) translateZ(-8px)',
+              textShadow: '0 8px 32px rgba(0,0,0,0.9), 0 16px 48px rgba(0,0,0,0.6)',
               userSelect: 'none',
             }}
           >
             {formatTime(now)}
           </h1>
 
-          {/* Main clock face */}
+          {/* Main clock */}
           <h1
             className="font-thin leading-none tabular-nums relative"
             style={{
-              fontSize: 'clamp(5rem, 22vw, 8rem)',
+              fontSize: 'clamp(4.5rem, 20vw, 7.5rem)',
               letterSpacing: '-0.02em',
-              color: 'rgba(255,255,255,0.95)',
-              transform: 'rotateX(6deg)',
+              transform: 'rotateX(5deg)',
               transformStyle: 'preserve-3d',
-              textShadow: `
-                0 1px 0 rgba(255,255,255,0.15),
-                0 -1px 0 rgba(0,0,0,0.3),
-                0 2px 4px rgba(0,0,0,0.4),
-                0 4px 12px rgba(0,0,0,0.55),
-                0 8px 28px rgba(0,0,0,0.5)
-              `,
-              background: 'linear-gradient(180deg, rgba(255,255,255,1) 0%, rgba(200,210,230,0.85) 100%)',
+              backgroundImage: 'linear-gradient(175deg, rgba(255,255,255,0.88) 0%, rgba(180,195,225,0.65) 100%)',
               WebkitBackgroundClip: 'text',
               WebkitTextFillColor: 'transparent',
               backgroundClip: 'text',
+              color: 'transparent',
+              filter: 'drop-shadow(0 2px 8px rgba(0,0,0,0.5))',
               userSelect: 'none',
             }}
             data-testid="text-time"
           >
             {formatTime(now)}
           </h1>
+
+          {/* Bottom shimmer line */}
+          <div className="absolute bottom-0 left-6 right-6 h-px rounded-full" style={{
+            background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.10), transparent)',
+          }} />
         </div>
 
-        {/* Double-tap hint */}
         <p
-          className="mt-2 text-[9px] font-light tracking-[0.18em] uppercase select-none"
-          style={{ color: 'rgba(255,255,255,0.18)', textShadow: '0 1px 4px rgba(0,0,0,0.5)' }}
-        >
-          double-tap to lock
-        </p>
-
-        <p
-          className="mt-2 text-sm font-light tracking-wide select-none"
-          style={{ color: 'rgba(255,255,255,0.40)', textShadow: '0 1px 8px rgba(0,0,0,0.6)' }}
+          className="mt-3 text-sm font-light tracking-wide select-none"
+          style={{ color: 'rgba(255,255,255,0.35)', textShadow: '0 1px 8px rgba(0,0,0,0.6)' }}
           data-testid="text-date"
         >
           {formatDate(now)}
         </p>
+
+        {/* Subtle planner pull indicator */}
+        {onOpenPlanner && (
+          <button
+            onClick={e => { e.stopPropagation(); onOpenPlanner(); }}
+            className="mt-6 flex flex-col items-center gap-1 active:opacity-60 transition-opacity"
+          >
+            <span className="text-[9px] font-light tracking-[0.25em] uppercase select-none"
+              style={{ color: 'rgba(255,255,255,0.18)' }}>
+              Plan
+            </span>
+            <svg width="16" height="8" viewBox="0 0 16 8" fill="none">
+              <path d="M2 2L8 6L14 2" stroke="rgba(255,255,255,0.15)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </button>
+        )}
       </motion.div>
 
       <div className="flex-1" />
@@ -185,7 +183,7 @@ export function HomeScreen({ onLock }: HomeScreenProps) {
               >
                 <span
                   className="text-base font-light tracking-wide"
-                  style={{ color: 'rgba(255,255,255,0.80)', textShadow: '0 1px 10px rgba(0,0,0,0.7)' }}
+                  style={{ color: 'rgba(255,255,255,0.78)', textShadow: '0 1px 10px rgba(0,0,0,0.7)' }}
                 >
                   {app.name}
                 </span>
@@ -197,9 +195,9 @@ export function HomeScreen({ onLock }: HomeScreenProps) {
 
       {/* Swipe dot hints */}
       <div className="absolute bottom-12 left-0 right-0 flex justify-center gap-1.5 pointer-events-none">
-        <span className="w-5 h-[1.5px] rounded-full" style={{ background: 'rgba(255,255,255,0.18)' }} />
-        <span className="w-2 h-[1.5px] rounded-full" style={{ background: 'rgba(255,255,255,0.38)' }} />
-        <span className="w-5 h-[1.5px] rounded-full" style={{ background: 'rgba(255,255,255,0.18)' }} />
+        <span className="w-5 h-[1.5px] rounded-full" style={{ background: 'rgba(255,255,255,0.15)' }} />
+        <span className="w-2 h-[1.5px] rounded-full" style={{ background: 'rgba(255,255,255,0.35)' }} />
+        <span className="w-5 h-[1.5px] rounded-full" style={{ background: 'rgba(255,255,255,0.15)' }} />
       </div>
     </div>
   );

@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Plus, X, Check, Pencil } from "lucide-react";
-import { useLauncherStore } from "@/hooks/useLauncherStore";
-import { TodoData, HabitData } from "@/hooks/useLauncherStore";
+import { useLauncherStore, TodoData } from "@/hooks/useLauncherStore";
+import { MiniCalendar } from "@/components/MiniCalendar";
 
 function formatDate(date: Date): string {
   return date.toLocaleDateString([], { weekday: 'long', month: 'long', day: 'numeric' });
@@ -55,29 +55,35 @@ export function FocusPanel() {
   return (
     <div
       className="w-full h-full flex flex-col overflow-y-auto"
-      style={{ background: 'linear-gradient(160deg, #fdf4ff 0%, #fce7f3 40%, #fff1f2 100%)' }}
+      style={{ background: 'linear-gradient(160deg, #0c0e14 0%, #111520 100%)' }}
       data-testid="focus-panel"
     >
-      <div className="px-6 pt-14 pb-4">
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
-          <p className="text-xs font-light tracking-widest uppercase opacity-40 mb-1">
+      {/* Header */}
+      <div className="px-5 pt-14 pb-3">
+        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
+          <p className="text-[11px] font-light tracking-widest uppercase text-white/30 mb-1">
             {formatDate(new Date())}
           </p>
-          <h2 className="text-3xl font-extralight tracking-wide opacity-80">Today's Focus</h2>
+          <h2 className="text-2xl font-extralight tracking-wide text-white/70">Today</h2>
         </motion.div>
       </div>
 
+      {/* Mini Calendar */}
+      <div className="px-5 mb-5">
+        <MiniCalendar />
+      </div>
+
       {/* Habits */}
-      <div className="px-6 mb-6">
+      <div className="px-5 mb-5">
         <div className="flex items-center justify-between mb-3">
-          <p className="text-xs font-light tracking-widest uppercase opacity-40">Daily Habits</p>
-          <p className="text-xs opacity-30 font-light">{completedHabits}/{totalHabits}</p>
+          <p className="text-[11px] font-light tracking-widest uppercase text-white/30">Habits</p>
+          <p className="text-[11px] text-white/20 font-light">{completedHabits}/{totalHabits}</p>
         </div>
 
-        {/* Habit progress bar */}
-        <div className="h-1 bg-black/5 rounded-full mb-4 overflow-hidden">
+        {/* Progress bar */}
+        <div className="h-[2px] bg-white/8 rounded-full mb-3 overflow-hidden">
           <motion.div
-            className="h-full bg-rose-300/70 rounded-full"
+            className="h-full bg-white/30 rounded-full"
             animate={{ width: `${totalHabits > 0 ? (completedHabits / totalHabits) * 100 : 0}%` }}
             transition={{ duration: 0.4 }}
           />
@@ -98,26 +104,28 @@ export function FocusPanel() {
                   onBlur={saveHabitEdit}
                   onKeyDown={(e) => e.key === "Enter" && saveHabitEdit()}
                   autoFocus
-                  className="flex-1 bg-transparent text-sm font-light outline-none"
+                  className="flex-1 bg-transparent text-sm font-light text-white/80 outline-none"
                   data-testid={`input-habit-${habit.id}`}
                 />
               ) : (
                 <>
                   <button
                     onClick={() => toggleHabit(habit.id)}
-                    className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-none transition-all ${
-                      habit.isCompleted ? 'bg-rose-300 border-rose-300' : 'border-black/20'
+                    className={`w-5 h-5 rounded-full border flex items-center justify-center flex-none transition-all ${
+                      habit.isCompleted
+                        ? 'bg-white/20 border-white/30'
+                        : 'border-white/20'
                     }`}
                     data-testid={`btn-habit-${habit.id}`}
                   >
-                    {habit.isCompleted && <Check className="w-3 h-3 text-white" />}
+                    {habit.isCompleted && <Check className="w-3 h-3 text-white/80" />}
                   </button>
-                  <span className={`flex-1 text-sm font-light ${habit.isCompleted ? 'line-through opacity-40' : 'opacity-70'}`}>
+                  <span className={`flex-1 text-sm font-light ${habit.isCompleted ? 'line-through text-white/25' : 'text-white/60'}`}>
                     {habit.text}
                   </span>
                   <button
                     onClick={() => { setEditingHabitId(habit.id); setEditingHabitText(habit.text); }}
-                    className="opacity-20 hover:opacity-40 transition-opacity"
+                    className="text-white/15 hover:text-white/40 transition-colors"
                     data-testid={`btn-edit-habit-${habit.id}`}
                   >
                     <Pencil className="w-3 h-3" />
@@ -130,10 +138,10 @@ export function FocusPanel() {
       </div>
 
       {/* Todos */}
-      <div className="px-6 mb-6">
-        <p className="text-xs font-light tracking-widest uppercase opacity-40 mb-3">To Do</p>
+      <div className="px-5 mb-5">
+        <p className="text-[11px] font-light tracking-widest uppercase text-white/30 mb-3">To Do</p>
 
-        {/* Add todo input */}
+        {/* Add input */}
         <div className="flex gap-2 mb-3">
           <input
             type="text"
@@ -141,7 +149,7 @@ export function FocusPanel() {
             value={newTodo}
             onChange={(e) => setNewTodo(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && addTodo()}
-            className="flex-1 bg-white/40 border border-white/60 rounded-2xl px-4 py-3 text-sm font-light placeholder:opacity-40 outline-none focus:ring-2 focus:ring-pink-200 transition-all"
+            className="flex-1 glass-panel rounded-2xl px-4 py-3 text-sm font-light text-white/70 placeholder:text-white/20 outline-none focus:ring-1 focus:ring-white/15 transition-all bg-transparent"
             data-testid="input-new-todo"
           />
           <button
@@ -149,7 +157,7 @@ export function FocusPanel() {
             className="w-12 h-12 rounded-2xl glass-panel flex items-center justify-center active:scale-95 transition-transform"
             data-testid="btn-add-todo"
           >
-            <Plus className="w-5 h-5 opacity-50" />
+            <Plus className="w-5 h-5 text-white/40" />
           </button>
         </div>
 
@@ -159,35 +167,35 @@ export function FocusPanel() {
               <motion.p
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                className="text-center py-4 text-sm opacity-25 font-light"
+                className="text-center py-4 text-xs text-white/20 font-light"
               >
-                All clear. Add something to focus on.
+                All clear.
               </motion.p>
             )}
             {state.todos.map((todo) => (
               <motion.div
                 key={todo.id}
                 layout
-                initial={{ opacity: 0, y: 8 }}
+                initial={{ opacity: 0, y: 6 }}
                 animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, x: 20 }}
+                exit={{ opacity: 0, x: 16 }}
                 className="flex items-center gap-3 py-3 px-4 glass-panel rounded-2xl"
               >
                 <button
                   onClick={() => toggleTodo(todo.id)}
-                  className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-none transition-all ${
-                    todo.isCompleted ? 'bg-rose-300 border-rose-300' : 'border-black/20'
+                  className={`w-5 h-5 rounded-full border flex items-center justify-center flex-none transition-all ${
+                    todo.isCompleted ? 'bg-white/20 border-white/30' : 'border-white/20'
                   }`}
                   data-testid={`btn-todo-${todo.id}`}
                 >
-                  {todo.isCompleted && <Check className="w-3 h-3 text-white" />}
+                  {todo.isCompleted && <Check className="w-3 h-3 text-white/80" />}
                 </button>
-                <span className={`flex-1 text-sm font-light ${todo.isCompleted ? 'line-through opacity-40' : 'opacity-70'}`}>
+                <span className={`flex-1 text-sm font-light ${todo.isCompleted ? 'line-through text-white/25' : 'text-white/60'}`}>
                   {todo.text}
                 </span>
                 <button
                   onClick={() => deleteTodo(todo.id)}
-                  className="opacity-20 hover:opacity-50 transition-opacity"
+                  className="text-white/15 hover:text-white/40 transition-colors"
                   data-testid={`btn-delete-todo-${todo.id}`}
                 >
                   <X className="w-4 h-4" />
@@ -199,14 +207,14 @@ export function FocusPanel() {
       </div>
 
       {/* Quick Notes */}
-      <div className="px-6 pb-12">
-        <p className="text-xs font-light tracking-widest uppercase opacity-40 mb-3">Quick Note</p>
+      <div className="px-5 pb-14">
+        <p className="text-[11px] font-light tracking-widest uppercase text-white/30 mb-3">Quick Note</p>
         <textarea
           value={state.quickNotes}
           onChange={(e) => updateState({ quickNotes: e.target.value })}
           placeholder="Jot something down..."
-          rows={4}
-          className="w-full bg-white/40 border border-white/60 rounded-2xl px-4 py-3 text-sm font-light placeholder:opacity-40 outline-none focus:ring-2 focus:ring-pink-200 transition-all resize-none"
+          rows={3}
+          className="w-full glass-panel rounded-2xl px-4 py-3 text-sm font-light text-white/60 placeholder:text-white/18 outline-none focus:ring-1 focus:ring-white/12 transition-all resize-none bg-transparent"
           data-testid="textarea-quick-notes"
         />
       </div>

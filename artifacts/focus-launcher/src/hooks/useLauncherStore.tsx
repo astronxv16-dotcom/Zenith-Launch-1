@@ -27,6 +27,8 @@ export type HabitData = {
   isCompleted: boolean;
 };
 
+export type FavoritesAlign = 'left' | 'center' | 'right';
+
 export type LauncherState = {
   apps: AppData[];
   folders: FolderData[];
@@ -34,6 +36,8 @@ export type LauncherState = {
   habits: HabitData[];
   quickNotes: string;
   wallpaper: string;
+  wallpaperImage: string | null;
+  favoritesAlign: FavoritesAlign;
   lastHabitResetDate: string;
 };
 
@@ -67,7 +71,9 @@ const DEFAULT_STATE: LauncherState = {
   todos: [],
   habits: DEFAULT_HABITS,
   quickNotes: '',
-  wallpaper: 'misty-lavender',
+  wallpaper: 'none',
+  wallpaperImage: null,
+  favoritesAlign: 'left',
   lastHabitResetDate: new Date().toISOString().split('T')[0],
 };
 
@@ -77,6 +83,8 @@ type LauncherContextType = {
   updateApp: (id: string, updates: Partial<AppData>) => void;
   toggleFavorite: (id: string) => void;
   setWallpaper: (theme: string) => void;
+  setWallpaperImage: (dataUrl: string | null) => void;
+  setFavoritesAlign: (align: FavoritesAlign) => void;
 };
 
 const LauncherContext = createContext<LauncherContextType | null>(null);
@@ -84,18 +92,14 @@ const LauncherContext = createContext<LauncherContextType | null>(null);
 export function LauncherProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState<LauncherState>(() => {
     try {
-      const stored = localStorage.getItem('focus_launcher_state');
+      const stored = localStorage.getItem('focus_launcher_state_v2');
       if (stored) {
         const parsed = JSON.parse(stored);
-        
-        // Check habit reset
         const today = new Date().toISOString().split('T')[0];
         if (parsed.lastHabitResetDate !== today) {
-          parsed.habits = parsed.habits.map((h: HabitData) => ({ ...h, isCompleted: false }));
+          parsed.habits = (parsed.habits || DEFAULT_HABITS).map((h: HabitData) => ({ ...h, isCompleted: false }));
           parsed.lastHabitResetDate = today;
         }
-        
-        // merge with defaults for new fields
         return { ...DEFAULT_STATE, ...parsed };
       }
     } catch (e) {
@@ -105,7 +109,13 @@ export function LauncherProvider({ children }: { children: React.ReactNode }) {
   });
 
   useEffect(() => {
-    localStorage.setItem('focus_launcher_state', JSON.stringify(state));
+    try {
+      localStorage.setItem('focus_launcher_state_v2', JSON.stringify(state));
+    } catch (e) {
+      // If storage quota exceeded (large wallpaper image), try without image
+      const { wallpaperImage: _img, ...rest } = state;
+      localStorage.setItem('focus_launcher_state_v2', JSON.stringify(rest));
+    }
   }, [state]);
 
   const updateState = (updates: Partial<LauncherState> | ((prev: LauncherState) => LauncherState)) => {
@@ -127,11 +137,19 @@ export function LauncherProvider({ children }: { children: React.ReactNode }) {
   };
 
   const setWallpaper = (wallpaper: string) => {
-    updateState({ wallpaper });
+    updateState({ wallpaper, wallpaperImage: null });
+  };
+
+  const setWallpaperImage = (dataUrl: string | null) => {
+    updateState({ wallpaperImage: dataUrl, wallpaper: dataUrl ? 'custom' : 'none' });
+  };
+
+  const setFavoritesAlign = (favoritesAlign: FavoritesAlign) => {
+    updateState({ favoritesAlign });
   };
 
   return (
-    <LauncherContext.Provider value={{ state, updateState, updateApp, toggleFavorite, setWallpaper }}>
+    <LauncherContext.Provider value={{ state, updateState, updateApp, toggleFavorite, setWallpaper, setWallpaperImage, setFavoritesAlign }}>
       {children}
     </LauncherContext.Provider>
   );

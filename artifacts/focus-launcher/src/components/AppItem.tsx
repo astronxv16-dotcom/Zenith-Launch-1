@@ -10,43 +10,47 @@ interface AppItemProps {
 }
 
 export function AppItem({ app, isFolderItem = false }: AppItemProps) {
-  const { updateApp, toggleFavorite, state } = useLauncherStore();
+  const { updateApp, toggleFavorite } = useLauncherStore();
   const { toast } = useToast();
   const [showMenu, setShowMenu] = useState(false);
+  const timerRef = { current: 0 };
 
   const handleLaunch = () => {
     if (app.isBlocked) {
-      toast({ title: "App is blocked", description: "Take a breath.", variant: "destructive" });
+      toast({ title: "App is blocked", description: "Stay focused." });
       return;
     }
     toast({ title: `Opening ${app.name}...` });
   };
 
-  const handleLongPress = (e: React.TouchEvent | React.MouseEvent) => {
-    e.preventDefault();
-    setShowMenu(true);
+  const handleTouchStart = () => {
+    timerRef.current = window.setTimeout(() => setShowMenu(true), 500);
+  };
+
+  const handleTouchEnd = () => {
+    clearTimeout(timerRef.current);
   };
 
   return (
     <div className="relative">
       <button
         onClick={handleLaunch}
-        onContextMenu={handleLongPress}
-        onTouchStart={(e) => {
-          const timer = setTimeout(() => setShowMenu(true), 500);
-          e.currentTarget.dataset.timer = timer.toString();
-        }}
-        onTouchEnd={(e) => {
-          clearTimeout(Number(e.currentTarget.dataset.timer));
-        }}
-        className={`w-full text-left py-4 px-6 active:scale-[0.98] transition-transform ${isFolderItem ? 'pl-10 text-lg opacity-80' : 'text-xl'}`}
+        onContextMenu={(e) => { e.preventDefault(); setShowMenu(true); }}
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
+        className={`w-full text-left active:bg-white/5 rounded-xl transition-colors ${isFolderItem ? 'py-3 px-8' : 'py-3.5 px-5'}`}
         data-testid={`app-item-${app.id}`}
       >
         <div className="flex items-center justify-between">
-          <span className={`font-light tracking-wide ${app.isBlocked ? 'opacity-40' : ''}`}>
+          <span className={`font-light tracking-wide ${app.isBlocked ? 'text-white/20' : 'text-white/60'} ${isFolderItem ? 'text-base' : 'text-lg'}`}>
             {app.name}
           </span>
-          {app.isBlocked && <Lock className="w-4 h-4 opacity-30" />}
+          <div className="flex items-center gap-2">
+            {app.isHidden && (
+              <span className="text-[10px] text-white/20 font-light px-2 py-0.5 rounded-full border border-white/10">hidden</span>
+            )}
+            {app.isBlocked && <Lock className="w-3.5 h-3.5 text-white/20" />}
+          </div>
         </div>
       </button>
 
@@ -57,14 +61,15 @@ export function AppItem({ app, isFolderItem = false }: AppItemProps) {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 z-40 bg-black/5"
+              className="fixed inset-0 z-40"
               onClick={() => setShowMenu(false)}
             />
             <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
+              initial={{ opacity: 0, scale: 0.93 }}
               animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="absolute z-50 top-12 left-6 right-6 glass-panel rounded-2xl p-2 shadow-lg flex flex-col"
+              exit={{ opacity: 0, scale: 0.93 }}
+              transition={{ duration: 0.15 }}
+              className="absolute z-50 top-10 left-5 right-5 glass-panel rounded-2xl py-1 shadow-2xl"
             >
               <MenuAction
                 onClick={() => { toggleFavorite(app.id); setShowMenu(false); }}
@@ -90,7 +95,7 @@ function MenuAction({ onClick, label }: { onClick: () => void; label: string }) 
   return (
     <button
       onClick={onClick}
-      className="text-left px-4 py-3 text-sm hover:bg-black/5 rounded-xl transition-colors"
+      className="w-full text-left px-4 py-3 text-sm font-light text-white/60 hover:bg-white/6 rounded-xl transition-colors"
     >
       {label}
     </button>

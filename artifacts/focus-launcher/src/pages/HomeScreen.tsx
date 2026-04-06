@@ -1,17 +1,10 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { MoreHorizontal } from "lucide-react";
+import { Settings } from "lucide-react";
 import { useLauncherStore } from "@/hooks/useLauncherStore";
-import { WallpaperPicker } from "@/components/WallpaperPicker";
+import { WallpaperPicker, WALLPAPER_GRADIENTS } from "@/components/WallpaperPicker";
+import { SettingsModal } from "@/components/SettingsModal";
 import { useToast } from "@/hooks/use-toast";
-
-const WALLPAPERS: Record<string, string> = {
-  'misty-lavender': 'linear-gradient(160deg, #ddd6fe 0%, #e0e7ff 40%, #f0f4ff 100%)',
-  'warm-sand': 'linear-gradient(160deg, #fde68a 0%, #fef3c7 40%, #fffbeb 100%)',
-  'ocean-fog': 'linear-gradient(160deg, #bae6fd 0%, #e0f2fe 40%, #f0f9ff 100%)',
-  'forest-morning': 'linear-gradient(160deg, #bbf7d0 0%, #d1fae5 40%, #f0fdf4 100%)',
-  'rose-dusk': 'linear-gradient(160deg, #fecdd3 0%, #ffe4e6 40%, #fff1f2 100%)',
-};
 
 function getGreeting(): string {
   const h = new Date().getHours();
@@ -30,11 +23,24 @@ function formatDate(date: Date): string {
   return date.toLocaleDateString([], { weekday: 'long', month: 'long', day: 'numeric' });
 }
 
+const ALIGN_CLASS: Record<string, string> = {
+  left: 'items-start',
+  center: 'items-center',
+  right: 'items-end',
+};
+
+const TEXT_ALIGN_CLASS: Record<string, string> = {
+  left: 'text-left',
+  center: 'text-center',
+  right: 'text-right',
+};
+
 export function HomeScreen() {
   const { state } = useLauncherStore();
   const { toast } = useToast();
   const [now, setNow] = useState(new Date());
   const [showWallpaper, setShowWallpaper] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
 
   useEffect(() => {
     const timer = setInterval(() => setNow(new Date()), 1000);
@@ -42,88 +48,101 @@ export function HomeScreen() {
   }, []);
 
   const favorites = state.apps.filter(a => a.isFavorite && !a.isHidden);
-  const wallpaperGradient = WALLPAPERS[state.wallpaper] || WALLPAPERS['misty-lavender'];
+
+  const bgStyle: React.CSSProperties = state.wallpaperImage
+    ? {
+        backgroundImage: `url(${state.wallpaperImage})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+      }
+    : {
+        background: WALLPAPER_GRADIENTS[state.wallpaper] ?? WALLPAPER_GRADIENTS['none'],
+      };
 
   const handleFavoriteClick = (app: typeof favorites[0]) => {
     if (app.isBlocked) {
-      toast({ title: "App is blocked", description: "Take a breath and stay focused." });
+      toast({ title: "App blocked", description: "Stay focused." });
       return;
     }
-    toast({ title: `Opening ${app.name}...`, description: "Launching app" });
+    toast({ title: `Opening ${app.name}...` });
   };
+
+  const align = state.favoritesAlign || 'left';
 
   return (
     <div
       className="relative w-full h-full flex flex-col overflow-hidden"
-      style={{ background: wallpaperGradient }}
+      style={bgStyle}
       data-testid="home-screen"
     >
-      {/* Settings button */}
-      <div className="absolute top-12 right-6 z-10">
+      {/* Dark overlay for readability when using photo wallpaper */}
+      {state.wallpaperImage && (
+        <div className="absolute inset-0 bg-black/35 pointer-events-none" />
+      )}
+
+      {/* Settings button — top right */}
+      <div className="absolute top-12 right-5 z-20">
         <button
-          onClick={() => setShowWallpaper(true)}
+          onClick={() => setShowSettings(true)}
           className="p-2 rounded-full glass-panel"
-          data-testid="btn-home-menu"
+          data-testid="btn-home-settings"
         >
-          <MoreHorizontal className="w-5 h-5 opacity-50" />
+          <Settings className="w-4 h-4 opacity-40" />
         </button>
       </div>
 
-      {/* Main content — time + date */}
-      <div className="flex-1 flex flex-col items-center justify-center px-8">
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, ease: "easeOut" }}
-          className="text-center"
+      {/* Date + Time — top center */}
+      <motion.div
+        initial={{ opacity: 0, y: -8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.7, ease: "easeOut" }}
+        className="relative z-10 flex flex-col items-center pt-14 px-6"
+      >
+        <p className="text-[11px] font-light tracking-widest uppercase opacity-35 mb-2">
+          {getGreeting()}
+        </p>
+        <h1
+          className="font-extralight leading-none tracking-tight text-white/80"
+          style={{ fontSize: 'clamp(4.5rem, 20vw, 7.5rem)' }}
+          data-testid="text-time"
         >
-          <p className="text-sm font-light tracking-widest uppercase opacity-50 mb-3">
-            {getGreeting()}
-          </p>
-          <h1
-            className="font-extralight leading-none tracking-tight"
-            style={{ fontSize: 'clamp(5rem, 22vw, 8rem)', color: 'rgba(30,20,60,0.75)' }}
-            data-testid="text-time"
-          >
-            {formatTime(now)}
-          </h1>
-          <p
-            className="mt-4 text-base font-light tracking-wide"
-            style={{ color: 'rgba(30,20,60,0.5)' }}
-            data-testid="text-date"
-          >
-            {formatDate(now)}
-          </p>
-        </motion.div>
+          {formatTime(now)}
+        </h1>
+        <p
+          className="mt-2 text-sm font-light tracking-wide text-white/40"
+          data-testid="text-date"
+        >
+          {formatDate(now)}
+        </p>
+      </motion.div>
+
+      {/* Spacer */}
+      <div className="flex-1" />
+
+      {/* Swipe hint */}
+      <div className="flex justify-center gap-2 mb-5 relative z-10">
+        <span className="w-6 h-[2px] rounded-full bg-white/12" />
+        <span className="w-2 h-[2px] rounded-full bg-white/28" />
+        <span className="w-6 h-[2px] rounded-full bg-white/12" />
       </div>
 
-      {/* Swipe hint indicators */}
-      <div className="flex justify-center gap-2 mb-6">
-        <span className="w-8 h-[2px] rounded-full bg-black/10" />
-        <span className="w-2 h-[2px] rounded-full bg-black/20" />
-        <span className="w-8 h-[2px] rounded-full bg-black/10" />
-      </div>
-
-      {/* Favorites row */}
+      {/* Favorites — vertical list */}
       {favorites.length > 0 && (
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 14 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.2 }}
-          className="mx-4 mb-10 glass-panel rounded-3xl px-6 py-4"
+          transition={{ duration: 0.5, delay: 0.15 }}
+          className="relative z-10 mx-5 mb-10 glass-panel rounded-3xl px-5 py-4"
         >
-          <div className="flex items-center justify-around">
-            {favorites.slice(0, 5).map((app) => (
+          <div className={`flex flex-col ${ALIGN_CLASS[align]} gap-1`}>
+            {favorites.slice(0, 6).map((app) => (
               <button
                 key={app.id}
                 onClick={() => handleFavoriteClick(app)}
-                className="flex flex-col items-center gap-1 py-1 px-2 rounded-xl active:scale-95 transition-transform"
+                className={`py-2 px-3 rounded-xl active:scale-[0.97] transition-transform w-full ${TEXT_ALIGN_CLASS[align]}`}
                 data-testid={`fav-${app.id}`}
               >
-                <span
-                  className="text-xs font-light tracking-wide opacity-70 max-w-[56px] text-center leading-tight"
-                  style={{ color: 'rgba(30,20,60,0.8)' }}
-                >
+                <span className="text-sm font-light text-white/65 tracking-wide">
                   {app.name}
                 </span>
               </button>
@@ -133,6 +152,11 @@ export function HomeScreen() {
       )}
 
       <WallpaperPicker isOpen={showWallpaper} onClose={() => setShowWallpaper(false)} />
+      <SettingsModal
+        isOpen={showSettings}
+        onClose={() => setShowSettings(false)}
+        onOpenWallpaper={() => setShowWallpaper(true)}
+      />
     </div>
   );
 }

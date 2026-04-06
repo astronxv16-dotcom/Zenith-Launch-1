@@ -2,7 +2,6 @@ import { useState, useRef } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { AppData, useLauncherStore } from "@/hooks/useLauncherStore";
-import { useToast } from "@/hooks/use-toast";
 import { Lock, ChevronRight, X, FolderPlus } from "lucide-react";
 
 interface AppItemProps {
@@ -26,9 +25,44 @@ const sheetStyle: React.CSSProperties = {
   borderRadius: '24px 24px 0 0',
 };
 
+const APP_PACKAGE_MAP: Record<string, string> = {
+  gmail: 'com.google.android.gm',
+  chrome: 'com.android.chrome',
+  maps: 'com.google.android.apps.maps',
+  camera: 'com.google.android.GoogleCamera',
+  gallery: 'com.google.android.apps.photos',
+  photos: 'com.google.android.apps.photos',
+  settings: 'com.android.settings',
+  calculator: 'com.android.calculator2',
+  clock: 'com.android.deskclock',
+  notes: 'com.google.android.keep',
+  keep: 'com.google.android.keep',
+  calendar: 'com.google.android.calendar',
+  messages: 'com.google.android.apps.messaging',
+  youtube: 'com.google.android.youtube',
+  files: 'com.android.documentsui',
+  phone: 'com.android.dialer',
+  contacts: 'com.android.contacts',
+  spotify: 'com.spotify.music',
+  whatsapp: 'com.whatsapp',
+  instagram: 'com.instagram.android',
+  twitter: 'com.twitter.android',
+  x: 'com.twitter.android',
+  drive: 'com.google.android.apps.docs',
+  meet: 'com.google.android.apps.meetings',
+  notion: 'notion.id',
+};
+
+function launchAndroidApp(id: string, name: string) {
+  const key = (id || name).toLowerCase().replace(/\s+/g, '');
+  const pkg = APP_PACKAGE_MAP[key] || APP_PACKAGE_MAP[name.toLowerCase().replace(/\s+/g, '')];
+  if (pkg) {
+    window.location.href = `intent://open#Intent;scheme=android-app;package=${pkg};end`;
+  }
+}
+
 export function AppItem({ app, isFolderItem = false }: AppItemProps) {
   const { state, updateApp, toggleFavorite, moveAppToFolder, updateState } = useLauncherStore();
-  const { toast } = useToast();
   const [showMenu, setShowMenu] = useState(false);
   const [menuPos, setMenuPos] = useState<{ top: number; left: number; width: number } | null>(null);
   const [showFolderPicker, setShowFolderPicker] = useState(false);
@@ -39,8 +73,8 @@ export function AppItem({ app, isFolderItem = false }: AppItemProps) {
 
   const handleLaunch = () => {
     if (showMenu || showFolderPicker) return;
-    if (app.isBlocked) { toast({ title: "App blocked", description: "Stay focused." }); return; }
-    toast({ title: `Opening ${app.name}...` });
+    if (app.isBlocked) { navigator.vibrate?.(180); return; }
+    launchAndroidApp(app.id, app.name);
   };
 
   const openMenu = () => {
@@ -71,7 +105,6 @@ export function AppItem({ app, isFolderItem = false }: AppItemProps) {
   const assignFolder = (folderId: string | null) => {
     moveAppToFolder(app.id, folderId);
     setShowFolderPicker(false);
-    toast({ title: folderId ? `Moved to folder` : `Removed from folder` });
   };
 
   const createAndAssign = () => {
@@ -85,7 +118,6 @@ export function AppItem({ app, isFolderItem = false }: AppItemProps) {
     setNewFolderName("");
     setShowNewFolder(false);
     setShowFolderPicker(false);
-    toast({ title: `Moved to "${newFolderName.trim()}"` });
   };
 
   return (

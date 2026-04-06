@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Plus, GripVertical, Check } from "lucide-react";
 
@@ -75,7 +76,7 @@ export function DailyPlanner({ isOpen, onClose }: { isOpen: boolean; onClose: ()
     setDeletingId(null);
   };
 
-  return (
+  return createPortal(
     <AnimatePresence>
       {isOpen && (
         <>
@@ -346,6 +347,7 @@ export function DailyPlanner({ isOpen, onClose }: { isOpen: boolean; onClose: ()
           </motion.div>
         </>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
 }

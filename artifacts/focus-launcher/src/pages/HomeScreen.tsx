@@ -64,7 +64,7 @@ export function HomeScreen({ onLock, onOpenPlanner }: HomeScreenProps) {
   return (
     <div className="relative w-full h-full flex flex-col overflow-hidden" data-testid="home-screen">
 
-      {/* 3D Clock — frosted glass card */}
+      {/* Clock — pure text over wallpaper, no card */}
       <motion.div
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
@@ -73,88 +73,76 @@ export function HomeScreen({ onLock, onOpenPlanner }: HomeScreenProps) {
         style={{ perspective: '600px' }}
       >
         <p
-          className="text-[10px] font-light tracking-[0.28em] uppercase mb-4 select-none"
-          style={{ color: 'rgba(255,255,255,0.40)', textShadow: '0 1px 8px rgba(0,0,0,0.6)' }}
+          className="text-[10px] font-light tracking-[0.30em] uppercase mb-4 select-none"
+          style={{ color: 'rgba(255,255,255,0.38)', textShadow: '0 1px 10px rgba(0,0,0,0.7)' }}
         >
           {getGreeting()}
         </p>
 
-        {/* Frosted glass card behind clock */}
+        {/* 3D time — no background, pure wallpaper bleed-through */}
         <div
-          className="relative cursor-pointer select-none active:scale-[0.97] transition-transform duration-150 px-6 py-4 rounded-3xl"
-          style={{
-            background: 'rgba(255,255,255,0.04)',
-            backdropFilter: 'blur(24px) saturate(140%)',
-            WebkitBackdropFilter: 'blur(24px) saturate(140%)',
-            border: '1px solid rgba(255,255,255,0.07)',
-            boxShadow: '0 8px 40px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.07)',
-          }}
+          className="relative cursor-pointer select-none active:scale-[0.98] transition-transform duration-150"
           onClick={handleClockTap}
           onTouchEnd={handleClockTap}
         >
-          {/* Shadow layer (depth) */}
+          {/* Depth shadow layer */}
           <h1
             aria-hidden
-            className="font-thin leading-none tabular-nums absolute inset-x-6 top-4 pointer-events-none"
+            className="font-thin leading-none tabular-nums absolute inset-0 pointer-events-none"
             style={{
-              fontSize: 'clamp(4.5rem, 20vw, 7.5rem)',
-              letterSpacing: '-0.02em',
+              fontSize: 'clamp(5rem, 22vw, 8rem)',
+              letterSpacing: '-0.025em',
               color: 'transparent',
-              transform: 'translateY(5px) translateZ(-8px)',
-              textShadow: '0 8px 32px rgba(0,0,0,0.9), 0 16px 48px rgba(0,0,0,0.6)',
+              transform: 'translateY(5px)',
+              textShadow: '0 8px 32px rgba(0,0,0,0.85), 0 16px 48px rgba(0,0,0,0.55)',
               userSelect: 'none',
             }}
           >
             {formatTime(now)}
           </h1>
 
-          {/* Main clock */}
+          {/* Main digits */}
           <h1
             className="font-thin leading-none tabular-nums relative"
             style={{
-              fontSize: 'clamp(4.5rem, 20vw, 7.5rem)',
-              letterSpacing: '-0.02em',
+              fontSize: 'clamp(5rem, 22vw, 8rem)',
+              letterSpacing: '-0.025em',
               transform: 'rotateX(5deg)',
               transformStyle: 'preserve-3d',
-              backgroundImage: 'linear-gradient(175deg, rgba(255,255,255,0.88) 0%, rgba(180,195,225,0.65) 100%)',
+              backgroundImage: 'linear-gradient(175deg, rgba(255,255,255,0.92) 0%, rgba(195,210,235,0.68) 100%)',
               WebkitBackgroundClip: 'text',
               WebkitTextFillColor: 'transparent',
               backgroundClip: 'text',
               color: 'transparent',
-              filter: 'drop-shadow(0 2px 8px rgba(0,0,0,0.5))',
+              filter: 'drop-shadow(0 2px 12px rgba(0,0,0,0.5))',
               userSelect: 'none',
             }}
             data-testid="text-time"
           >
             {formatTime(now)}
           </h1>
-
-          {/* Bottom shimmer line */}
-          <div className="absolute bottom-0 left-6 right-6 h-px rounded-full" style={{
-            background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.10), transparent)',
-          }} />
         </div>
 
         <p
           className="mt-3 text-sm font-light tracking-wide select-none"
-          style={{ color: 'rgba(255,255,255,0.35)', textShadow: '0 1px 8px rgba(0,0,0,0.6)' }}
+          style={{ color: 'rgba(255,255,255,0.34)', textShadow: '0 1px 10px rgba(0,0,0,0.7)' }}
           data-testid="text-date"
         >
           {formatDate(now)}
         </p>
 
-        {/* Subtle planner pull indicator */}
+        {/* Subtle planner indicator */}
         {onOpenPlanner && (
           <button
             onClick={e => { e.stopPropagation(); onOpenPlanner(); }}
-            className="mt-6 flex flex-col items-center gap-1 active:opacity-60 transition-opacity"
+            className="mt-5 flex flex-col items-center gap-1 active:opacity-50 transition-opacity"
           >
-            <span className="text-[9px] font-light tracking-[0.25em] uppercase select-none"
-              style={{ color: 'rgba(255,255,255,0.18)' }}>
-              Plan
+            <span className="text-[9px] font-light tracking-[0.30em] uppercase select-none"
+              style={{ color: 'rgba(255,255,255,0.16)', textShadow: '0 1px 6px rgba(0,0,0,0.6)' }}>
+              plan
             </span>
-            <svg width="16" height="8" viewBox="0 0 16 8" fill="none">
-              <path d="M2 2L8 6L14 2" stroke="rgba(255,255,255,0.15)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+            <svg width="14" height="7" viewBox="0 0 14 7" fill="none">
+              <path d="M1.5 1.5L7 5.5L12.5 1.5" stroke="rgba(255,255,255,0.13)" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
           </button>
         )}
@@ -162,7 +150,7 @@ export function HomeScreen({ onLock, onOpenPlanner }: HomeScreenProps) {
 
       <div className="flex-1" />
 
-      {/* Favorites */}
+      {/* Favorites — slightly more breathing room, still clean */}
       {favorites.length > 0 && (
         <motion.div
           initial={{ opacity: 0, y: 10 }}
@@ -178,12 +166,12 @@ export function HomeScreen({ onLock, onOpenPlanner }: HomeScreenProps) {
                   if (app.isBlocked) { toast({ title: "App blocked", description: "Stay focused." }); return; }
                   toast({ title: `Opening ${app.name}...` });
                 }}
-                className={`py-1.5 rounded-lg active:opacity-60 transition-opacity w-full ${ALIGN_TEXT[align]}`}
+                className={`py-2.5 rounded-lg active:opacity-55 transition-opacity w-full ${ALIGN_TEXT[align]}`}
                 data-testid={`fav-${app.id}`}
               >
                 <span
                   className="text-base font-light tracking-wide"
-                  style={{ color: 'rgba(255,255,255,0.78)', textShadow: '0 1px 10px rgba(0,0,0,0.7)' }}
+                  style={{ color: 'rgba(255,255,255,0.78)', textShadow: '0 1px 12px rgba(0,0,0,0.75)' }}
                 >
                   {app.name}
                 </span>
@@ -195,9 +183,9 @@ export function HomeScreen({ onLock, onOpenPlanner }: HomeScreenProps) {
 
       {/* Swipe dot hints */}
       <div className="absolute bottom-12 left-0 right-0 flex justify-center gap-1.5 pointer-events-none">
-        <span className="w-5 h-[1.5px] rounded-full" style={{ background: 'rgba(255,255,255,0.15)' }} />
-        <span className="w-2 h-[1.5px] rounded-full" style={{ background: 'rgba(255,255,255,0.35)' }} />
-        <span className="w-5 h-[1.5px] rounded-full" style={{ background: 'rgba(255,255,255,0.15)' }} />
+        <span className="w-5 h-[1.5px] rounded-full" style={{ background: 'rgba(255,255,255,0.14)' }} />
+        <span className="w-2 h-[1.5px] rounded-full" style={{ background: 'rgba(255,255,255,0.32)' }} />
+        <span className="w-5 h-[1.5px] rounded-full" style={{ background: 'rgba(255,255,255,0.14)' }} />
       </div>
     </div>
   );

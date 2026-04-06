@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Search, X, FolderPlus, Settings } from "lucide-react";
 import { useLauncherStore } from "@/hooks/useLauncherStore";
@@ -30,7 +31,7 @@ const searchStyle: React.CSSProperties = {
 };
 
 const sheetStyle: React.CSSProperties = {
-  background: 'rgba(12,14,20,0.94)',
+  background: 'rgba(12,14,20,0.96)',
   backdropFilter: 'blur(40px)',
   WebkitBackdropFilter: 'blur(40px)',
   border: '1px solid rgba(255,255,255,0.07)',
@@ -53,7 +54,6 @@ export function AppDrawer({ onModalChange }: AppDrawerProps) {
     if (!open) { setShowSettings(false); setShowWallpaper(false); setShowCreateFolder(false); }
   };
 
-  // App drawer never shows hidden apps — they're managed in Settings
   const visibleApps = useMemo(() => {
     let apps = state.apps.filter(a => !a.isHidden);
     if (search.trim()) {
@@ -125,52 +125,55 @@ export function AppDrawer({ onModalChange }: AppDrawerProps) {
         ))}
       </div>
 
-      {/* Create folder sheet */}
-      <AnimatePresence>
-        {showCreateFolder && (
-          <div onMouseDown={e => e.stopPropagation()} onTouchStart={e => e.stopPropagation()}>
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              className="fixed inset-0 z-50 bg-black/40" onClick={() => setModal(false)} />
-            <motion.div
-              initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }}
-              transition={{ type: "spring", damping: 32, stiffness: 260 }}
-              className="fixed bottom-0 left-0 right-0 z-50 p-6"
-              style={sheetStyle}
-            >
-              <h3 className="text-base font-light text-white/65 mb-4">New Folder</h3>
-              <input
-                type="text" placeholder="Folder name"
-                value={newFolderName}
-                onChange={e => setNewFolderName(e.target.value)}
-                onKeyDown={e => e.key === 'Enter' && createFolder()}
-                className="w-full rounded-xl px-4 py-3 text-sm font-light text-white/65 placeholder:text-white/22 outline-none mb-4 bg-white/6 border border-white/8"
-                data-testid="input-folder-name"
-              />
-              <div className="flex gap-3">
-                <button onClick={() => setModal(false)} className="flex-1 py-3 rounded-xl text-sm font-light text-white/35 bg-white/4">Cancel</button>
-                <button onClick={createFolder} className="flex-1 py-3 rounded-xl bg-white/10 text-sm font-medium text-white/60">Create</button>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
-
-      {/* Settings (with the height fix) */}
-      {showSettings && (
-        <div onMouseDown={e => e.stopPropagation()} onTouchStart={e => e.stopPropagation()}>
-          <SettingsModal
-            isOpen={showSettings}
-            onClose={() => setModal(false)}
-            onOpenWallpaper={() => { setShowSettings(false); setShowWallpaper(true); }}
-          />
-        </div>
+      {/* Create folder sheet — rendered via portal to escape transform context */}
+      {createPortal(
+        <AnimatePresence>
+          {showCreateFolder && (
+            <>
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                className="fixed inset-0 z-[100] bg-black/40" onClick={() => setModal(false)} />
+              <motion.div
+                initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }}
+                transition={{ type: "spring", damping: 32, stiffness: 260 }}
+                className="fixed bottom-0 left-0 right-0 z-[101] p-6"
+                style={sheetStyle}
+                onMouseDown={e => e.stopPropagation()}
+                onTouchStart={e => e.stopPropagation()}
+              >
+                <h3 className="text-base font-light text-white/65 mb-4">New Folder</h3>
+                <input
+                  type="text" placeholder="Folder name"
+                  value={newFolderName}
+                  onChange={e => setNewFolderName(e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && createFolder()}
+                  className="w-full rounded-xl px-4 py-3 text-sm font-light text-white/65 placeholder:text-white/22 outline-none mb-4 bg-white/6 border border-white/8"
+                  data-testid="input-folder-name"
+                />
+                <div className="flex gap-3">
+                  <button onClick={() => setModal(false)} className="flex-1 py-3 rounded-xl text-sm font-light text-white/35 bg-white/4">Cancel</button>
+                  <button onClick={createFolder} className="flex-1 py-3 rounded-xl bg-white/10 text-sm font-medium text-white/60">Create</button>
+                </div>
+              </motion.div>
+            </>
+          )}
+        </AnimatePresence>,
+        document.body
       )}
 
-      {/* Wallpaper */}
-      {showWallpaper && (
-        <div onMouseDown={e => e.stopPropagation()} onTouchStart={e => e.stopPropagation()}>
-          <WallpaperPicker isOpen={showWallpaper} onClose={() => setModal(false)} />
-        </div>
+      {/* Settings — portal */}
+      {createPortal(
+        <SettingsModal
+          isOpen={showSettings}
+          onClose={() => setModal(false)}
+          onOpenWallpaper={() => { setShowSettings(false); setShowWallpaper(true); }}
+        />,
+        document.body
+      )}
+
+      {/* Wallpaper — portal */}
+      {createPortal(
+        <WallpaperPicker isOpen={showWallpaper} onClose={() => setModal(false)} />,
+        document.body
       )}
     </div>
   );

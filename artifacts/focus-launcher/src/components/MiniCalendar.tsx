@@ -19,21 +19,11 @@ const calStyle: React.CSSProperties = {
   padding: '14px',
 };
 
-const popupStyle: React.CSSProperties = {
-  background: 'rgba(16,18,26,0.96)',
-  backdropFilter: 'blur(30px)',
-  WebkitBackdropFilter: 'blur(30px)',
-  border: '1px solid rgba(255,255,255,0.10)',
-  borderRadius: '16px',
-  minWidth: '220px',
-};
-
 export function MiniCalendar() {
   const today = new Date();
   const { state, setCalendarEvent, deleteCalendarEvent } = useLauncherStore();
   const [viewDate, setViewDate] = useState(new Date(today.getFullYear(), today.getMonth(), 1));
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
-  const [popupPos, setPopupPos] = useState<{ top: number; left: number } | null>(null);
   const [editText, setEditText] = useState("");
 
   const year = viewDate.getFullYear();
@@ -51,14 +41,16 @@ export function MiniCalendar() {
   const isToday = (day: number, type: string) =>
     type === 'curr' && day === today.getDate() && month === today.getMonth() && year === today.getFullYear();
 
-  const handleDayClick = (e: React.MouseEvent, day: number, type: string) => {
+  const handleDayClick = (day: number, type: string) => {
     if (type !== 'curr') return;
     const key = toKey(year, month, day);
-    const rect = (e.target as HTMLElement).getBoundingClientRect();
+    if (selectedKey === key) {
+      setSelectedKey(null);
+      setEditText("");
+      return;
+    }
     setSelectedKey(key);
     setEditText(state.calendarEvents[key] || "");
-    // Position popup near the clicked cell
-    setPopupPos({ top: rect.bottom + 6, left: Math.max(8, rect.left - 80) });
   };
 
   const saveEvent = () => {
@@ -69,19 +61,19 @@ export function MiniCalendar() {
       deleteCalendarEvent(selectedKey);
     }
     setSelectedKey(null);
-    setPopupPos(null);
+    setEditText("");
   };
 
   return (
     <div style={calStyle} data-testid="mini-calendar">
       {/* Header */}
       <div className="flex items-center justify-between mb-3">
-        <button onClick={() => setViewDate(new Date(year, month - 1, 1))}
+        <button onClick={() => { setViewDate(new Date(year, month - 1, 1)); setSelectedKey(null); }}
           className="p-1.5 rounded-xl active:bg-white/8 transition-colors" data-testid="btn-cal-prev">
           <ChevronLeft className="w-4 h-4 text-white/28" />
         </button>
         <span className="text-[13px] font-light text-white/42 tracking-wide">{MONTHS[month]} {year}</span>
-        <button onClick={() => setViewDate(new Date(year, month + 1, 1))}
+        <button onClick={() => { setViewDate(new Date(year, month + 1, 1)); setSelectedKey(null); }}
           className="p-1.5 rounded-xl active:bg-white/8 transition-colors" data-testid="btn-cal-next">
           <ChevronRight className="w-4 h-4 text-white/28" />
         </button>
@@ -99,21 +91,29 @@ export function MiniCalendar() {
         {cells.map((cell, i) => {
           const key = cell.type === 'curr' ? toKey(year, month, cell.day) : '';
           const hasEvent = key && !!state.calendarEvents[key];
-          const isSelected = selectedKey === key;
+          const isSelected = selectedKey === key && key !== '';
+          const isTodayCell = isToday(cell.day, cell.type);
           return (
             <div key={i} className="flex items-center justify-center h-7">
               <div
-                onClick={e => handleDayClick(e, cell.day, cell.type)}
+                onClick={() => handleDayClick(cell.day, cell.type)}
                 className={`relative w-6 h-6 flex items-center justify-center rounded-full text-[12px] font-light transition-all cursor-pointer
                   ${cell.type !== 'curr' ? 'text-white/10 pointer-events-none' : 'text-white/48 hover:bg-white/8'}
-                  ${isToday(cell.day, cell.type) ? '!text-white/88 font-medium' : ''}
-                  ${isSelected ? 'ring-1 ring-white/30' : ''}
+                  ${isTodayCell ? '!text-white/88 font-medium' : ''}
+                  ${isSelected ? '!ring-1 !ring-white/40 !bg-white/15' : ''}
                 `}
-                style={isToday(cell.day, cell.type) ? { background: 'rgba(255,255,255,0.12)' } : {}}
+                style={
+                  hasEvent && !isSelected && !isTodayCell
+                    ? { background: 'rgba(255,255,255,0.10)', color: 'rgba(255,255,255,0.80)', fontWeight: 500 }
+                    : isTodayCell
+                    ? { background: 'rgba(255,255,255,0.12)' }
+                    : {}
+                }
               >
                 {cell.day}
                 {hasEvent && (
-                  <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-white/50" />
+                  <span className="absolute -bottom-0.5 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full"
+                    style={{ background: 'rgba(180,180,255,0.7)' }} />
                 )}
               </div>
             </div>
@@ -121,24 +121,21 @@ export function MiniCalendar() {
         })}
       </div>
 
-      {/* Event popup */}
+      {/* Inline event popup — rendered INSIDE the calendar, no overlap */}
       <AnimatePresence>
-        {selectedKey && popupPos && (
-          <>
-            <div className="fixed inset-0 z-[60]" onClick={() => { setSelectedKey(null); setPopupPos(null); }} />
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: -4 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              transition={{ duration: 0.14 }}
-              className="fixed z-[61] p-3"
-              style={{ ...popupStyle, top: popupPos.top, left: popupPos.left }}
-              onMouseDown={e => e.stopPropagation()}
-              onTouchStart={e => e.stopPropagation()}
-            >
+        {selectedKey && (
+          <motion.div
+            key={selectedKey}
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+            className="overflow-hidden"
+          >
+            <div className="mt-3 pt-3" style={{ borderTop: '1px solid rgba(255,255,255,0.07)' }}>
               <div className="flex items-center justify-between mb-2">
                 <p className="text-[11px] font-light text-white/35 tracking-wide">{selectedKey}</p>
-                <button onClick={() => { setSelectedKey(null); setPopupPos(null); }}>
+                <button onClick={() => { setSelectedKey(null); setEditText(""); }}>
                   <X className="w-3.5 h-3.5 text-white/28" />
                 </button>
               </div>
@@ -153,7 +150,7 @@ export function MiniCalendar() {
               />
               <div className="flex gap-2">
                 {state.calendarEvents[selectedKey] && (
-                  <button onClick={() => { deleteCalendarEvent(selectedKey); setSelectedKey(null); setPopupPos(null); }}
+                  <button onClick={() => { deleteCalendarEvent(selectedKey); setSelectedKey(null); setEditText(""); }}
                     className="flex-1 py-2 rounded-lg text-xs font-light text-white/30 bg-white/4 active:bg-white/8">
                     Clear
                   </button>
@@ -163,8 +160,8 @@ export function MiniCalendar() {
                   Save
                 </button>
               </div>
-            </motion.div>
-          </>
+            </div>
+          </motion.div>
         )}
       </AnimatePresence>
     </div>

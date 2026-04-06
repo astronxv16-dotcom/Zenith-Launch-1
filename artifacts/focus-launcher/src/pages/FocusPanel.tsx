@@ -1,14 +1,14 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, X, Check, Pencil } from "lucide-react";
+import { Plus, X, Check } from "lucide-react";
 import { useLauncherStore, TodoData } from "@/hooks/useLauncherStore";
 import { MiniCalendar } from "@/components/MiniCalendar";
+import { WeatherWidget } from "@/components/WeatherWidget";
 
 function formatDate(date: Date): string {
   return date.toLocaleDateString([], { weekday: 'long', month: 'long', day: 'numeric' });
 }
 
-// Thin transparent frosted glass
 const thinGlass: React.CSSProperties = {
   background: 'rgba(255,255,255,0.045)',
   backdropFilter: 'blur(18px) saturate(160%)',
@@ -24,8 +24,6 @@ interface FocusPanelProps {
 export function FocusPanel({ onModalChange: _omit }: FocusPanelProps) {
   const { state, updateState } = useLauncherStore();
   const [newTodo, setNewTodo] = useState("");
-  const [editingHabitId, setEditingHabitId] = useState<string | null>(null);
-  const [editingHabitText, setEditingHabitText] = useState("");
 
   const addTodo = () => {
     if (!newTodo.trim()) return;
@@ -39,19 +37,6 @@ export function FocusPanel({ onModalChange: _omit }: FocusPanelProps) {
 
   const deleteTodo = (id: string) =>
     updateState(prev => ({ ...prev, todos: prev.todos.filter(t => t.id !== id) }));
-
-  const toggleHabit = (id: string) =>
-    updateState(prev => ({ ...prev, habits: prev.habits.map(h => h.id === id ? { ...h, isCompleted: !h.isCompleted } : h) }));
-
-  const saveHabitEdit = () => {
-    if (!editingHabitId || !editingHabitText.trim()) return;
-    updateState(prev => ({ ...prev, habits: prev.habits.map(h => h.id === editingHabitId ? { ...h, text: editingHabitText.trim() } : h) }));
-    setEditingHabitId(null);
-    setEditingHabitText("");
-  };
-
-  const done = state.habits.filter(h => h.isCompleted).length;
-  const total = state.habits.length;
 
   return (
     <div className="w-full h-full flex flex-col overflow-y-auto" data-testid="focus-panel">
@@ -68,47 +53,10 @@ export function FocusPanel({ onModalChange: _omit }: FocusPanelProps) {
         <MiniCalendar />
       </div>
 
-      {/* Habits */}
+      {/* Weather Widget */}
       <div className="px-5 mb-5">
-        <div className="flex items-center justify-between mb-2">
-          <p className="text-[10px] font-light tracking-[0.22em] uppercase text-white/28">Habits</p>
-          <p className="text-[10px] text-white/20 font-light">{done}/{total}</p>
-        </div>
-        <div className="h-[1.5px] bg-white/6 rounded-full mb-3 overflow-hidden">
-          <motion.div className="h-full bg-white/28 rounded-full" animate={{ width: `${total > 0 ? (done / total) * 100 : 0}%` }} transition={{ duration: 0.4 }} />
-        </div>
-        <div className="space-y-2">
-          {state.habits.map(habit => (
-            <motion.div key={habit.id} layout style={thinGlass} className="flex items-center gap-3 py-3 px-4">
-              {editingHabitId === habit.id ? (
-                <input
-                  type="text"
-                  value={editingHabitText}
-                  onChange={e => setEditingHabitText(e.target.value)}
-                  onBlur={saveHabitEdit}
-                  onKeyDown={e => e.key === "Enter" && saveHabitEdit()}
-                  autoFocus
-                  className="flex-1 bg-transparent text-sm font-light text-white/75 outline-none"
-                  data-testid={`input-habit-${habit.id}`}
-                />
-              ) : (
-                <>
-                  <button
-                    onClick={() => toggleHabit(habit.id)}
-                    className={`w-5 h-5 rounded-full border flex-none flex items-center justify-center transition-all ${habit.isCompleted ? 'bg-white/18 border-white/25' : 'border-white/18'}`}
-                    data-testid={`btn-habit-${habit.id}`}
-                  >
-                    {habit.isCompleted && <Check className="w-3 h-3 text-white/75" />}
-                  </button>
-                  <span className={`flex-1 text-sm font-light ${habit.isCompleted ? 'line-through text-white/22' : 'text-white/58'}`}>{habit.text}</span>
-                  <button onClick={() => { setEditingHabitId(habit.id); setEditingHabitText(habit.text); }} className="text-white/14 hover:text-white/38 transition-colors">
-                    <Pencil className="w-3 h-3" />
-                  </button>
-                </>
-              )}
-            </motion.div>
-          ))}
-        </div>
+        <p className="text-[10px] font-light tracking-[0.22em] uppercase text-white/28 mb-2">Weather</p>
+        <WeatherWidget />
       </div>
 
       {/* Todos */}

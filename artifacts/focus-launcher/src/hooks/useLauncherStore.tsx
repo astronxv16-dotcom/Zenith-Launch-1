@@ -6,7 +6,6 @@ export type AppData = {
   folderId?: string | null;
   isHidden?: boolean;
   isBlocked?: boolean;
-  blockUntil?: number | null;
   isFavorite?: boolean;
 };
 
@@ -29,6 +28,9 @@ export type HabitData = {
 
 export type FavoritesAlign = 'left' | 'center' | 'right';
 
+// calendarEvents: { "2026-04-06": "Doctor appt" }
+export type CalendarEvents = Record<string, string>;
+
 export type LauncherState = {
   apps: AppData[];
   folders: FolderData[];
@@ -39,6 +41,7 @@ export type LauncherState = {
   wallpaperImage: string | null;
   favoritesAlign: FavoritesAlign;
   lastHabitResetDate: string;
+  calendarEvents: CalendarEvents;
 };
 
 const DEFAULT_APPS: AppData[] = [
@@ -75,6 +78,7 @@ const DEFAULT_STATE: LauncherState = {
   wallpaperImage: null,
   favoritesAlign: 'left',
   lastHabitResetDate: new Date().toISOString().split('T')[0],
+  calendarEvents: {},
 };
 
 type LauncherContextType = {
@@ -85,6 +89,10 @@ type LauncherContextType = {
   setWallpaper: (theme: string) => void;
   setWallpaperImage: (dataUrl: string | null) => void;
   setFavoritesAlign: (align: FavoritesAlign) => void;
+  moveAppToFolder: (appId: string, folderId: string | null) => void;
+  renameFolder: (folderId: string, name: string) => void;
+  setCalendarEvent: (dateKey: string, text: string) => void;
+  deleteCalendarEvent: (dateKey: string) => void;
 };
 
 const LauncherContext = createContext<LauncherContextType | null>(null);
@@ -92,7 +100,7 @@ const LauncherContext = createContext<LauncherContextType | null>(null);
 export function LauncherProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState<LauncherState>(() => {
     try {
-      const stored = localStorage.getItem('focus_launcher_state_v2');
+      const stored = localStorage.getItem('focus_launcher_state_v3');
       if (stored) {
         const parsed = JSON.parse(stored);
         const today = new Date().toISOString().split('T')[0];
@@ -102,61 +110,61 @@ export function LauncherProvider({ children }: { children: React.ReactNode }) {
         }
         return { ...DEFAULT_STATE, ...parsed };
       }
-    } catch (e) {
-      console.error("Failed to load state", e);
-    }
+    } catch { /* ignore */ }
     return DEFAULT_STATE;
   });
 
   useEffect(() => {
     try {
-      localStorage.setItem('focus_launcher_state_v2', JSON.stringify(state));
-    } catch (e) {
-      // If storage quota exceeded (large wallpaper image), try without image
+      localStorage.setItem('focus_launcher_state_v3', JSON.stringify(state));
+    } catch {
       const { wallpaperImage: _img, ...rest } = state;
-      localStorage.setItem('focus_launcher_state_v2', JSON.stringify(rest));
+      localStorage.setItem('focus_launcher_state_v3', JSON.stringify(rest));
     }
   }, [state]);
 
-  const updateState = (updates: Partial<LauncherState> | ((prev: LauncherState) => LauncherState)) => {
+  const updateState = (updates: Partial<LauncherState> | ((prev: LauncherState) => LauncherState)) =>
     setState(prev => typeof updates === 'function' ? updates(prev) : { ...prev, ...updates });
-  };
 
-  const updateApp = (id: string, updates: Partial<AppData>) => {
-    setState(prev => ({
-      ...prev,
-      apps: prev.apps.map(app => app.id === id ? { ...app, ...updates } : app)
-    }));
-  };
+  const updateApp = (id: string, updates: Partial<AppData>) =>
+    setState(prev => ({ ...prev, apps: prev.apps.map(a => a.id === id ? { ...a, ...updates } : a) }));
 
-  const toggleFavorite = (id: string) => {
-    setState(prev => ({
-      ...prev,
-      apps: prev.apps.map(app => app.id === id ? { ...app, isFavorite: !app.isFavorite } : app)
-    }));
-  };
+  const toggleFavorite = (id: string) =>
+    setState(prev => ({ ...prev, apps: prev.apps.map(a => a.id === id ? { ...a, isFavorite: !a.isFavorite } : a) }));
 
-  const setWallpaper = (wallpaper: string) => {
-    updateState({ wallpaper, wallpaperImage: null });
-  };
+  const moveAppToFolder = (appId: string, folderId: string | null) =>
+    setState(prev => ({ ...prev, apps: prev.apps.map(a => a.id === appId ? { ...a, folderId } : a) }));
 
-  const setWallpaperImage = (dataUrl: string | null) => {
-    updateState({ wallpaperImage: dataUrl, wallpaper: dataUrl ? 'custom' : 'none' });
-  };
+  const renameFolder = (folderId: string, name: string) =>
+    setState(prev => ({ ...prev, folders: prev.folders.map(f => f.id === folderId ? { ...f, name } : f) }));
 
-  const setFavoritesAlign = (favoritesAlign: FavoritesAlign) => {
-    updateState({ favoritesAlign });
-  };
+  const setCalendarEvent = (dateKey: string, text: string) =>
+    setState(prev => ({ ...prev, calendarEvents: { ...prev.calendarEvents, [dateKey]: text } }));
+
+  const deleteCalendarEvent = (dateKey: string) =>
+    setState(prev => {
+      const events = { ...prev.calendarEvents };
+      delete events[dateKey];
+      return { ...prev, calendarEvents: events };
+    });
+
+  const setWallpaper = (wallpaper: string) => updateState({ wallpaper, wallpaperImage: null });
+  const setWallpaperImage = (dataUrl: string | null) => updateState({ wallpaperImage: dataUrl, wallpaper: dataUrl ? 'custom' : 'none' });
+  const setFavoritesAlign = (favoritesAlign: FavoritesAlign) => updateState({ favoritesAlign });
 
   return (
-    <LauncherContext.Provider value={{ state, updateState, updateApp, toggleFavorite, setWallpaper, setWallpaperImage, setFavoritesAlign }}>
+    <LauncherContext.Provider value={{
+      state, updateState, updateApp, toggleFavorite,
+      setWallpaper, setWallpaperImage, setFavoritesAlign,
+      moveAppToFolder, renameFolder, setCalendarEvent, deleteCalendarEvent,
+    }}>
       {children}
     </LauncherContext.Provider>
   );
 }
 
 export function useLauncherStore() {
-  const context = useContext(LauncherContext);
-  if (!context) throw new Error("useLauncherStore must be used within LauncherProvider");
-  return context;
+  const ctx = useContext(LauncherContext);
+  if (!ctx) throw new Error("useLauncherStore must be used within LauncherProvider");
+  return ctx;
 }

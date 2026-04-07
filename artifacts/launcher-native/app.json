@@ -1,0 +1,46 @@
+{
+  "expo": {
+    "name": "Focus Launcher",
+    "slug": "focus-launcher-native",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/images/icon.png",
+    "scheme": "launcher-native",
+    "userInterfaceStyle": "dark",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/images/icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#07090F"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.focuslauncher.native"
+    },
+    "android": {
+      "package": "com.focuslauncher.native",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/images/icon.png",
+        "backgroundColor": "#07090F"
+      }
+    },
+    "web": {
+      "favicon": "./assets/images/icon.png"
+    },
+    "plugins": [
+      [
+        "expo-router",
+        {
+          "origin": "https://replit.com/"
+        }
+      ],
+      "expo-font",
+      "expo-web-browser",
+      "./plugins/withLauncherIntent"
+    ],
+    "experiments": {
+      "typedRoutes": true,
+      "reactCompiler": true
+    }
+  }
+}

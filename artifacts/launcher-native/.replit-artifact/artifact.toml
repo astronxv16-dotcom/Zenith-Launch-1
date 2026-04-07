@@ -1,0 +1,27 @@
+kind = "mobile"
+previewPath = "/launcher-native/"
+title = "Focus Launcher (Native)"
+version = "1.0.0"
+id = "artifacts/launcher-native"
+router = "expo-domain"
+
+[[integratedSkills]]
+name = "expo"
+version = "1.0.0"
+
+[[services]]
+ensurePreviewReachable = "/status"
+name = "expo"
+paths = [ "/launcher-native/" ]
+localPort = 24118
+
+[services.development]
+run = "pnpm --filter @workspace/launcher-native run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/launcher-native", "run", "build" ]
+run = [ "pnpm", "--filter", "@workspace/launcher-native", "run", "serve" ]
+
+[services.env]
+PORT = "24118"
+BASE_PATH = "/launcher-native/"

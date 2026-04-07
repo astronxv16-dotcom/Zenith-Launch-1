@@ -1,1 +1,8 @@
-# Removed — native launcher deleted
+name: Build Focus Launcher APK
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  # rest...

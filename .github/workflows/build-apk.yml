@@ -1,0 +1,55 @@
+name: Build Focus Launcher APK
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build Android APK
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install workspace dependencies
+        run: pnpm install
+
+      - name: Setup Java (required for Android build)
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Install EAS CLI
+        run: npm install -g eas-cli@latest
+
+      - name: Build APK (local — no Expo account needed)
+        working-directory: artifacts/launcher-native
+        env:
+          ANDROID_HOME: /usr/local/lib/android/sdk
+        run: |
+          eas build \
+            --platform android \
+            --profile apk \
+            --non-interactive \
+            --local \
+            --output /tmp/focus-launcher.apk
+
+      - name: Upload APK as downloadable artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: focus-launcher-apk
+          path: /tmp/focus-launcher.apk
+          retention-days: 30
